@@ -1108,7 +1108,7 @@ function openModal(mode, type, id){
       </div>
       <div class="preview-name" id="previewBox" style="display:none">Será exibido como: <strong id="previewVal"></strong></div>
       <div class="form-row">
-        <div class="form-group"><label>CPF</label><input id="fCpf" value="${item.cpf||''}" placeholder="000.000.000-00"></div>
+        <div class="form-group"><label>CPF</label><input id="fCpf" value="${item.cpf||''}" placeholder="000.000.000-00" oninput="maskCPF(this)" onpaste="setTimeout(()=>maskCPF(this),10)"></div>
         <div class="form-group"><label>Telefone (DDD + nº)</label><input id="fTel" value="${item.telefone||''}" placeholder="81 99999-0000"></div>
       </div>
       <div class="form-row">
@@ -1198,6 +1198,15 @@ function updatePreview(){
   else { nb.style.display='none'; }
 }
 window.updatePreview=updatePreview;
+
+function maskCPF(el){
+  let v=el.value.replace(/\D/g,'').substring(0,11);
+  if(v.length>9)      v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if(v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+  else if(v.length>3) v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+  el.value=v;
+}
+window.maskCPF=maskCPF;
 
 function autoFill(sel){
   const cliId=sel.value; if(!cliId)return;
