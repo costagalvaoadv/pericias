@@ -1035,7 +1035,15 @@ window.openDetailById=openDetailById;
 function openClientDetail(id){
   const c=D.clientes.find(x=>(x._id||x.id)===id); if(!c)return;
   const nd=dispName(c); const cid=c._id||c.id;
-  const perList=[...D.pericias.filter(x=>x.clienteId===id||x.nome===nd||x.nome===c.nome),...D.sociais.filter(x=>x.clienteId===id||x.nome===nd||x.nome===c.nome)].sort((a,b)=>new Date(b.data||0)-new Date(a.data||0));
+  // Busca flexível — por clienteId OU por qualquer variação do nome
+  const nomeNorm=(s='')=>s.toLowerCase().trim();
+  const nomesCliente=[nomeNorm(nd),nomeNorm(c.nome),nomeNorm(c.nome+(c.representante?' — resp. '+c.representante:''))];
+  const matchItem=x=>{
+    if(x.clienteId&&(x.clienteId===cid||x.clienteId===id)) return true;
+    if(x.nome&&nomesCliente.some(n=>nomeNorm(x.nome).includes(n)||n.includes(nomeNorm(x.nome)))) return true;
+    return false;
+  };
+  const perList=[...D.pericias.filter(matchItem),...D.sociais.filter(matchItem)].sort((a,b)=>new Date(b.data||0)-new Date(a.data||0));
   const body=`
     <div class="detail-header">
       <div class="detail-avatar">${inits(nd)}</div>
