@@ -105,6 +105,9 @@ input,select,textarea{font-family:inherit;font-size:13px}
 .badge-blue{background:var(--blue-bg);color:var(--blue)}
 .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
 .badge-red{background:#FDEAEA;color:#C0180F}
+.badge-orange{background:#FFF0E0;color:#C05000}
+.badge-purple{background:#F0EAFA;color:#6B21A8}
+.badge-teal{background:#E0FAF4;color:#0F6B4E}
 
 .dash-row{display:grid;gap:10px;margin-bottom:14px}
 .dash-row-1{grid-template-columns:repeat(3,1fr)}
@@ -144,6 +147,10 @@ tbody tr.row-today td{background:var(--today-bg)}
 tbody tr.row-today:hover td{background:#FAE0E0}
 tbody tr.row-week td{background:var(--week-bg)}
 tbody tr.row-week:hover td{background:#FFF3CC}
+tbody tr.row-judicial td{background:#FFF5EE}
+tbody tr.row-judicial:hover td{background:#FFE5CC}
+tbody tr.row-jud-done td{background:#F5F0FA}
+tbody tr.row-jud-done:hover td{background:#EAE0F5}
 .td-name{font-weight:600;color:var(--text);cursor:pointer}
 .td-name:hover{color:var(--wine);text-decoration:underline}
 .td-minor{font-size:10px;color:var(--text2);font-weight:400;display:block;margin-top:1px}
@@ -314,6 +321,7 @@ tbody tr.row-week:hover td{background:#FFF3CC}
         <div class="page-header"><h1>Dashboard</h1><p>Costa Galvão Advocacia · clique nos quadrantes para filtrar</p></div>
         <div class="dash-row dash-row-1" id="dashUrgency"></div>
         <div class="dash-row dash-row-2" id="dashCards"></div>
+        <div class="dash-row" style="grid-template-columns:repeat(4,1fr)" id="dashJudicial"></div>
         <div class="dash-row dash-row-3" id="dashAlerts"></div>
         <div class="section-header" style="margin-top:4px">
           <div class="section-title"><i class="ti ti-calendar-event" style="color:var(--wine)"></i> Agenda dos próximos 15 dias</div>
@@ -331,7 +339,7 @@ tbody tr.row-week:hover td{background:#FFF3CC}
           </select>
           <select class="filter-select" id="fsPeri" onchange="renderPericias()">
             <option value="">Todos os status</option>
-            <option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option>
+            <option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="para judicializar">Para judicializar</option><option value="judicializado">Judicializado</option><option value="concedido judicialmente">Concedido judicialmente</option><option value="cancelado">Cancelado</option>
           </select>
           <button class="btn-primary" onclick="openModal('new','pericia')"><i class="ti ti-plus"></i> Nova perícia</button>
         </div>
@@ -351,7 +359,7 @@ tbody tr.row-week:hover td{background:#FFF3CC}
           </select>
           <select class="filter-select" id="fsSoc" onchange="renderSociais()">
             <option value="">Todos os status</option>
-            <option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option>
+            <option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="para judicializar">Para judicializar</option><option value="judicializado">Judicializado</option><option value="concedido judicialmente">Concedido judicialmente</option><option value="cancelado">Cancelado</option>
           </select>
           <button class="btn-primary" onclick="openModal('new','social')"><i class="ti ti-plus"></i> Nova avaliação</button>
         </div>
@@ -378,7 +386,7 @@ tbody tr.row-week:hover td{background:#FFF3CC}
         <div class="rel-filters">
           <div class="rel-filter-group"><label>Tipo</label><select id="rTipo" onchange="renderRel()"><option value="">Todos</option><option value="pericia">Perícias</option><option value="social">Av. Sociais</option></select></div>
           <div class="rel-filter-group"><label>Benefício</label><select id="rBenef" onchange="renderRel()"><option value="">Todos</option><option>BPC</option><option>Aposentadoria por invalidez</option><option>Auxílio-doença</option><option>Auxílio-acidente</option><option>Pensão por morte</option></select></div>
-          <div class="rel-filter-group"><label>Status</label><select id="rStatus" onchange="renderRel()"><option value="">Todos</option><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option></select></div>
+          <div class="rel-filter-group"><label>Status</label><select id="rStatus" onchange="renderRel()"><option value="">Todos</option><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="para judicializar">Para judicializar</option><option value="judicializado">Judicializado</option><option value="concedido judicialmente">Concedido judicialmente</option><option value="cancelado">Cancelado</option></select></div>
           <div class="rel-filter-group"><label>Período</label><select id="rPer" onchange="renderRel()"><option value="">Todos</option><option value="7">Próx. 7 dias</option><option value="15">Próx. 15 dias</option><option value="30">Próx. 30 dias</option><option value="p30">Últ. 30 dias</option><option value="p90">Últ. 90 dias</option></select></div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -495,7 +503,7 @@ function dispName(c){
   return c.nome||'-';
 }
 function stBadge(s){
-  const m={agendado:'badge-blue',realizado:'badge-green',cancelado:'badge-gray',pendente:'badge-amber',concedido:'badge-green',indeferido:'badge-red'};
+  const m={agendado:'badge-blue',realizado:'badge-green',cancelado:'badge-gray',pendente:'badge-amber',concedido:'badge-green',indeferido:'badge-red','para judicializar':'badge-orange',judicializado:'badge-purple','concedido judicialmente':'badge-teal'};
   return `<span class="badge ${m[s]||'badge-gray'}">${s||'pendente'}</span>`;
 }
 function bBadge(b){
@@ -659,6 +667,9 @@ function renderDashboard(){
   const hoje    =all.filter(x=>dU(x.data)===0&&x.status==='agendado');
   const conc    =all.filter(x=>x.status==='concedido');
   const indf    =all.filter(x=>x.status==='indeferido');
+  const judicial=all.filter(x=>x.status==='para judicializar');
+  const judicializado_=all.filter(x=>x.status==='judicializado');
+  const concJud =all.filter(x=>x.status==='concedido judicialmente');
   const total   =conc.length+indf.length||1;
   const txC     =Math.round(conc.length/total*100);
 
@@ -701,7 +712,29 @@ function renderDashboard(){
       <div class="dcard-val">${conc.length}</div><div class="dcard-sub">${txC}% dos decididos</div>
     </div>`;
 
-  // ROW 3 — alerts
+  // ROW 3 — judicial
+  const judicialEl=document.getElementById('dashJudicial');
+  if(judicialEl) judicialEl.innerHTML=`
+    <div class="dcard" style="border-top-color:#C05000;cursor:pointer" onclick="dashFilter('para_judicializar')">
+      <div class="dcard-label" style="color:#C05000"><i class="ti ti-gavel"></i> Para judicializar</div>
+      <div class="dcard-val" style="color:#C05000">${judicial.length}</div>
+      <div class="dcard-sub">aguardando ação judicial</div>
+    </div>
+    <div class="dcard" style="border-top-color:#6B21A8;cursor:pointer" onclick="dashFilter('judicializado')">
+      <div class="dcard-label" style="color:#6B21A8"><i class="ti ti-scale"></i> Judicializados</div>
+      <div class="dcard-val" style="color:#6B21A8">${judicializado_.length}</div>
+      <div class="dcard-sub">em andamento judicial</div>
+    </div>
+    <div class="dcard" style="border-top-color:#0F6B4E;cursor:pointer" onclick="dashFilter('concedido_jud')">
+      <div class="dcard-label" style="color:#0F6B4E"><i class="ti ti-trophy"></i> Concedido judicialmente</div>
+      <div class="dcard-val" style="color:#0F6B4E">${concJud.length}</div>
+      <div class="dcard-sub">vitórias na Justiça</div>
+    </div>
+    <div class="dcard" onclick="dashFilter('indeferidos')">
+      <div class="dcard-label"><i class="ti ti-circle-x"></i> Indeferidos</div>
+      <div class="dcard-val">${indf.length}</div>
+      <div class="dcard-sub">${100-txC}% dos decididos</div>
+    </div>`;
   const hojeP  =allP.filter(x=>dU(x.data)===0&&x.status==='agendado');
   const hojeS  =allS.filter(x=>dU(x.data)===0&&x.status==='agendado');
   const semana7=all.filter(x=>{const d=dU(x.data);return d>0&&d<=7&&x.status==='agendado';});
@@ -757,9 +790,10 @@ window.renderDashboard=renderDashboard;
 
 function dashFilter(f){
   if(f==='clientes'){nav('clientes');return;}
-  if(f==='concedidos'||f==='indeferidos'){
+  if(f==='concedidos'||f==='indeferidos'||f==='para_judicializar'||f==='judicializado'||f==='concedido_jud'){
     nav('relatorios');
-    setTimeout(()=>{document.getElementById('rStatus').value=f==='concedidos'?'concedido':'indeferido';renderRel();},80);
+    const map={concedidos:'concedido',indeferidos:'indeferido',para_judicializar:'para judicializar',judicializado:'judicializado',concedido_jud:'concedido judicialmente'};
+    setTimeout(()=>{document.getElementById('rStatus').value=map[f]||'';renderRel();},80);
     return;
   }
   if(f==='pericias_ag'){ openPopup('Perícias agendadas', D.pericias.filter(x=>x.status==='agendado'), 'pericia'); return; }
@@ -815,7 +849,7 @@ function renderPericias(){
   const tb=document.getElementById('tbPericias'); if(!tb)return;
   if(!rows.length){tb.innerHTML='<tr><td colspan="8" class="empty-state">Nenhuma perícia encontrada</td></tr>';return;}
   tb.innerHTML=rows.map(x=>{
-    const dd=dU(x.data); const cls=dd===0?'row-today':dd>0&&dd<=7?'row-week':''; const xid=x._id||x.id;
+    const dd=dU(x.data); const cls=dd===0?'row-today':dd>0&&dd<=7?'row-week':x.status==='para judicializar'?'row-judicial':x.status==='judicializado'?'row-jud-done':''; const xid=x._id||x.id;
     return`<tr class="${cls}">
       <td><span class="td-name" onclick="openDetailById('${xid}','pericia')">${x.nome||'—'}</span>${urgTag(dd)}</td>
       <td>${bBadge(x.beneficio)}</td><td class="td-muted">${x.processo||'—'}</td>
@@ -839,7 +873,7 @@ function renderSociais(){
   const tb=document.getElementById('tbSociais'); if(!tb)return;
   if(!rows.length){tb.innerHTML='<tr><td colspan="8" class="empty-state">Nenhuma avaliação encontrada</td></tr>';return;}
   tb.innerHTML=rows.map(x=>{
-    const dd=dU(x.data); const cls=dd===0?'row-today':dd>0&&dd<=7?'row-week':''; const xid=x._id||x.id;
+    const dd=dU(x.data); const cls=dd===0?'row-today':dd>0&&dd<=7?'row-week':x.status==='para judicializar'?'row-judicial':x.status==='judicializado'?'row-jud-done':''; const xid=x._id||x.id;
     return`<tr class="${cls}">
       <td><span class="td-name" onclick="openDetailById('${xid}','social')">${x.nome||'—'}</span>${urgTag(dd)}</td>
       <td>${bBadge(x.beneficio)}</td><td class="td-muted">${x.processo||'—'}</td>
@@ -895,7 +929,7 @@ function renderRel(){
       if(per==='p90')return diff>=-90&&diff<0; return true;});
   }
   const cnt=document.getElementById('relCount'); if(cnt) cnt.textContent=all.length;
-  const stC={agendado:0,realizado:0,concedido:0,indeferido:0,cancelado:0};
+  const stC={agendado:0,realizado:0,concedido:0,indeferido:0,'para judicializar':0,judicializado:0,'concedido judicialmente':0,cancelado:0};
   all.forEach(x=>{if(stC[x.status]!==undefined)stC[x.status]++;});
   const bC={}; all.forEach(x=>{if(x.beneficio)bC[x.beneficio]=(bC[x.beneficio]||0)+1;});
   const bList=[...new Set([...D.pericias,...D.sociais].map(x=>x.beneficio).filter(Boolean))];
@@ -906,7 +940,7 @@ function renderRel(){
   const csEl=document.getElementById('cStatus');
   if(csEl){
     const labels=Object.keys(stC).filter(k=>stC[k]>0); const vals=labels.map(k=>stC[k]);
-    const colors={agendado:'#1250A0',realizado:'#1D6B2E',concedido:'#1D6B2E',indeferido:'#C0180F',cancelado:'#9C9690'};
+    const colors={agendado:'#1250A0',realizado:'#1D6B2E',concedido:'#1D6B2E',indeferido:'#C0180F','para judicializar':'#C05000',judicializado:'#6B21A8','concedido judicialmente':'#0F6B4E',cancelado:'#9C9690'};
     CI.cStatus=new Chart(csEl,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:labels.map(l=>colors[l]||'#888'),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}});
     const leg=document.getElementById('legS');
     if(leg) leg.innerHTML=labels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[l]||'#888'}"></div>${l} (${vals[i]})</div>`).join('');
@@ -1000,6 +1034,12 @@ function openDetailById(id, tipo){
   let x=(tipo==='social'?D.sociais:D.pericias).find(i=>(i._id||i.id)===id);
   if(!x){ x=[...D.pericias,...D.sociais].find(i=>(i._id||i.id)===id); if(x) tipo=x.tipo||'pericia'; else return; }
   const nm=x.nome||'—'; const dd=dU(x.data); const xid=x._id||x.id;
+  // Busca observações do cliente vinculado
+  const clienteVinc=x.clienteId?D.clientes.find(c=>(c._id||c.id)===x.clienteId):D.clientes.find(c=>{
+    const nomeNorm=s=>(s||'').toLowerCase().trim();
+    return nomeNorm(dispName(c))===nomeNorm(x.nome)||nomeNorm(c.nome)===nomeNorm(x.nome);
+  });
+  const obsCliente=clienteVinc?.obs||'';
   const rows=[
     ['ti-tag','Benefício',bBadge(x.beneficio)],
     ['ti-file-text','Processo',x.processo||'—'],
@@ -1009,7 +1049,7 @@ function openDetailById(id, tipo){
     ['ti-map','Endereço',x.endereco||'—'],
     ['ti-phone','Telefone',x.telefone||'—'],
     ['ti-circle-check','Status',stBadge(x.status)],
-    ['ti-note','Observações',x.obs||'—'],
+    ['ti-note','Obs. da perícia',x.obs||'—'],
   ];
   const body=`
     <div class="detail-header">
@@ -1023,6 +1063,7 @@ function openDetailById(id, tipo){
       </div>
       ${x.telefone?`<button class="btn-wa" style="gap:5px;padding:6px 10px" onclick="toggleWA(event,'${xid}','${encodeURIComponent(nm)}','${x.telefone}','${x.data||''}','${x.hora||''}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>`:''}
     </div>
+    ${obsCliente?`<div style="background:var(--amber-bg);border-left:4px solid var(--amber);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--text)"><div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px"><i class="ti ti-notes"></i> Diagnóstico / Informações do cliente</div>${obsCliente}</div>`:''}
     ${rows.map(([ico,lbl,val])=>`<div class="detail-row"><div class="detail-label"><i class="ti ${ico}"></i>${lbl}</div><div class="detail-value">${val}</div></div>`).join('')}
     <div class="detail-actions">
       <button class="btn-primary" onclick="closeModal();openModal('edit','${tipo}','${xid}')"><i class="ti ti-edit"></i> Editar</button>
@@ -1087,7 +1128,7 @@ function closeModal(){ document.getElementById('modalOverlay').classList.add('hi
 window.closeModal=closeModal;
 
 const BOPTS=['BPC','Aposentadoria por invalidez','Auxílio-doença','Auxílio-acidente','Pensão por morte'].map(b=>`<option>${b}</option>`).join('');
-const SOPTS=['agendado','realizado','concedido','indeferido','cancelado','pendente'].map(s=>`<option>${s}</option>`).join('');
+const SOPTS=['agendado','realizado','concedido','indeferido','para judicializar','judicializado','concedido judicialmente','cancelado','pendente'].map(s=>`<option>${s}</option>`).join('');
 const ROPTS=['admin','advogado','advogada','assistente','estagiário'].map(r=>`<option>${r}</option>`).join('');
 
 function openModal(mode, type, id){
@@ -1122,7 +1163,7 @@ function openModal(mode, type, id){
         <div class="form-row-3">
           <div class="form-group"><label>Data da perícia</label><input type="date" id="fPData" value=""></div>
           <div class="form-group"><label>Horário</label><input type="time" id="fPHora" value=""></div>
-          <div class="form-group"><label>Status</label><select id="fPStatus"><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option></select></div>
+          <div class="form-group"><label>Status</label><select id="fPStatus"><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="para judicializar">Para judicializar</option><option value="judicializado">Judicializado</option><option value="concedido judicialmente">Concedido judicialmente</option><option value="cancelado">Cancelado</option></select></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>APS / Local</label><input id="fPLocal" placeholder="Ex: APS Garanhuns"></div>
@@ -1136,7 +1177,7 @@ function openModal(mode, type, id){
         <div class="form-row-3">
           <div class="form-group"><label>Data da avaliação</label><input type="date" id="fSData" value=""></div>
           <div class="form-group"><label>Horário</label><input type="time" id="fSHora" value=""></div>
-          <div class="form-group"><label>Status</label><select id="fSStatus"><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option></select></div>
+          <div class="form-group"><label>Status</label><select id="fSStatus"><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="para judicializar">Para judicializar</option><option value="judicializado">Judicializado</option><option value="concedido judicialmente">Concedido judicialmente</option><option value="cancelado">Cancelado</option></select></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>APS / Local</label><input id="fSLocal" placeholder="Ex: APS Garanhuns"></div>
