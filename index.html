@@ -107,8 +107,9 @@ input,select,textarea{font-family:inherit;font-size:13px}
 .badge-red{background:#FDEAEA;color:#C0180F}
 
 .dash-row{display:grid;gap:10px;margin-bottom:14px}
-.dash-row-1{grid-template-columns:repeat(7,1fr)}
-.dash-row-2{grid-template-columns:1fr 1fr 1fr}
+.dash-row-1{grid-template-columns:repeat(3,1fr)}
+.dash-row-2{grid-template-columns:repeat(4,1fr)}
+.dash-row-3{grid-template-columns:1fr 1fr 1fr}
 .dcard{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .18s;border-top:3px solid var(--wine)}
 .dcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--wine)}
 .dcard:hover .dcard-val{color:var(--wine)}
@@ -116,6 +117,11 @@ input,select,textarea{font-family:inherit;font-size:13px}
 .dcard.amber{border-top-color:var(--amber)}.dcard.amber:hover{border-color:var(--amber)}.dcard.amber:hover .dcard-val{color:var(--amber)}
 .dcard.blue{border-top-color:var(--blue)}.dcard.blue:hover{border-color:var(--blue)}.dcard.blue:hover .dcard-val{color:var(--blue)}
 .dcard.red{border-top-color:#C0180F}.dcard.red:hover{border-color:#C0180F}.dcard.red:hover .dcard-val{color:#C0180F}
+.dcard.urgent{background:#FFF0F0;border:2px solid #C0180F;border-top:4px solid #C0180F;animation:urgentPulse 2s ease-in-out infinite}
+.dcard.urgent:hover{transform:translateY(-3px);box-shadow:0 6px 24px rgba(192,24,15,.25)}
+.dcard.urgent .dcard-val{color:#C0180F;font-size:28px}
+.dcard.urgent .dcard-label{color:#C0180F}
+@keyframes urgentPulse{0%,100%{box-shadow:0 0 0 0 rgba(192,24,15,.3)}50%{box-shadow:0 0 0 8px rgba(192,24,15,0)}}
 .dcard-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:flex;align-items:center;gap:4px}
 .dcard-val{font-size:24px;font-weight:700;color:var(--text);transition:color .18s}
 .dcard-sub{font-size:10px;color:var(--text3);margin-top:2px}
@@ -306,8 +312,9 @@ tbody tr.row-week:hover td{background:#FFF3CC}
 
       <div class="page active" id="page-dashboard">
         <div class="page-header"><h1>Dashboard</h1><p>Costa Galvão Advocacia · clique nos quadrantes para filtrar</p></div>
-        <div class="dash-row dash-row-1" id="dashCards"></div>
-        <div class="dash-row dash-row-2" id="dashAlerts"></div>
+        <div class="dash-row dash-row-1" id="dashUrgency"></div>
+        <div class="dash-row dash-row-2" id="dashCards"></div>
+        <div class="dash-row dash-row-3" id="dashAlerts"></div>
         <div class="section-header" style="margin-top:4px">
           <div class="section-title"><i class="ti ti-calendar-event" style="color:var(--wine)"></i> Agenda dos próximos 15 dias</div>
         </div>
@@ -646,30 +653,57 @@ function renderDashboard(){
   const allP=D.pericias, allS=D.sociais, all=[...allP,...allS];
   const agP=allP.filter(x=>x.status==='agendado');
   const agS=allS.filter(x=>x.status==='agendado');
-  const hoje=all.filter(x=>dU(x.data)===0&&x.status==='agendado');
-  const prox15=all.filter(x=>{const d=dU(x.data);return d>0&&d<=15&&x.status==='agendado';});
-  const conc=all.filter(x=>x.status==='concedido');
-  const indf=all.filter(x=>x.status==='indeferido');
-  const total=conc.length+indf.length||1;
-  const txC=Math.round(conc.length/total*100);
-  const cards=[
-    {label:'Clientes',val:D.clientes.length,sub:'cadastrados',icon:'ti-users',cls:'',filter:'clientes'},
-    {label:'Perícias ativas',val:agP.length,sub:'agendadas',icon:'ti-stethoscope',cls:'blue',filter:'pericias_ag'},
-    {label:'Av. Sociais ativas',val:agS.length,sub:'agendadas',icon:'ti-users',cls:'blue',filter:'sociais_ag'},
-    {label:'Hoje',val:hoje.length,sub:hoje.length+' compromisso'+(hoje.length!==1?'s':''),icon:'ti-alarm',cls:'red',filter:'hoje'},
-    {label:'Próximos 15 dias',val:prox15.length,sub:'agendamentos',icon:'ti-calendar-week',cls:'amber',filter:'prox15'},
-    {label:'Concedidos',val:conc.length,sub:txC+'% dos decididos',icon:'ti-circle-check',cls:'green',filter:'concedidos'},
-    {label:'Indeferidos',val:indf.length,sub:(100-txC)+'% dos decididos',icon:'ti-circle-x',cls:'',filter:'indeferidos'},
-  ];
-  document.getElementById('dashCards').innerHTML=cards.map(c=>`
-    <div class="dcard ${c.cls}" onclick="dashFilter('${c.filter}')">
-      <div class="dcard-label"><i class="ti ${c.icon}"></i>${c.label}</div>
-      <div class="dcard-val">${c.val}</div>
-      <div class="dcard-sub">${c.sub}</div>
-    </div>`).join('');
+  const em1dia  =all.filter(x=>dU(x.data)===1&&x.status==='agendado');
+  const em2dias =all.filter(x=>dU(x.data)===2&&x.status==='agendado');
+  const em15dias=all.filter(x=>{const d=dU(x.data);return d>=3&&d<=15&&x.status==='agendado';});
+  const hoje    =all.filter(x=>dU(x.data)===0&&x.status==='agendado');
+  const conc    =all.filter(x=>x.status==='concedido');
+  const indf    =all.filter(x=>x.status==='indeferido');
+  const total   =conc.length+indf.length||1;
+  const txC     =Math.round(conc.length/total*100);
 
-  const hojeP=allP.filter(x=>dU(x.data)===0&&x.status==='agendado');
-  const hojeS=allS.filter(x=>dU(x.data)===0&&x.status==='agendado');
+  // ROW 1 — urgency
+  const urgEl=document.getElementById('dashUrgency');
+  if(urgEl) urgEl.innerHTML=`
+    <div class="dcard urgent" onclick="dashFilter('em1dia')">
+      <div class="dcard-label"><i class="ti ti-bell-ringing"></i> AMANHÃ — 1 DIA</div>
+      <div class="dcard-val">${em1dia.length}</div>
+      <div class="dcard-sub">${em1dia.length===0?'Nenhum agendamento':'⚠️ Prepare a pré-perícia!'}</div>
+    </div>
+    <div class="dcard red" onclick="dashFilter('em2dias')">
+      <div class="dcard-label"><i class="ti ti-clock-hour-4"></i> Em 2 dias</div>
+      <div class="dcard-val">${em2dias.length}</div>
+      <div class="dcard-sub">compromisso${em2dias.length!==1?'s':''}</div>
+    </div>
+    <div class="dcard amber" onclick="dashFilter('em15dias')">
+      <div class="dcard-label"><i class="ti ti-calendar-week"></i> Próximos 15 dias</div>
+      <div class="dcard-val">${em15dias.length}</div>
+      <div class="dcard-sub">agendamento${em15dias.length!==1?'s':''}</div>
+    </div>`;
+
+  // ROW 2 — stats
+  const cardsEl=document.getElementById('dashCards');
+  if(cardsEl) cardsEl.innerHTML=`
+    <div class="dcard" onclick="dashFilter('clientes')">
+      <div class="dcard-label"><i class="ti ti-users"></i> Clientes</div>
+      <div class="dcard-val">${D.clientes.length}</div><div class="dcard-sub">cadastrados</div>
+    </div>
+    <div class="dcard blue" onclick="dashFilter('pericias_ag')">
+      <div class="dcard-label"><i class="ti ti-stethoscope"></i> Perícias ativas</div>
+      <div class="dcard-val">${agP.length}</div><div class="dcard-sub">agendadas</div>
+    </div>
+    <div class="dcard blue" onclick="dashFilter('sociais_ag')">
+      <div class="dcard-label"><i class="ti ti-users"></i> Av. Sociais ativas</div>
+      <div class="dcard-val">${agS.length}</div><div class="dcard-sub">agendadas</div>
+    </div>
+    <div class="dcard green" onclick="dashFilter('concedidos')">
+      <div class="dcard-label"><i class="ti ti-circle-check"></i> Concedidos</div>
+      <div class="dcard-val">${conc.length}</div><div class="dcard-sub">${txC}% dos decididos</div>
+    </div>`;
+
+  // ROW 3 — alerts
+  const hojeP  =allP.filter(x=>dU(x.data)===0&&x.status==='agendado');
+  const hojeS  =allS.filter(x=>dU(x.data)===0&&x.status==='agendado');
   const semana7=all.filter(x=>{const d=dU(x.data);return d>0&&d<=7&&x.status==='agendado';});
   const buildItems=(items,tp)=>{
     if(!items.length) return '<div class="empty-alert">Nenhum agendamento</div>';
@@ -682,7 +716,8 @@ function renderDashboard(){
         ${bBadge(x.beneficio)}
       </div>`).join('');
   };
-  document.getElementById('dashAlerts').innerHTML=`
+  const alertsEl=document.getElementById('dashAlerts');
+  if(alertsEl) alertsEl.innerHTML=`
     <div class="alert-card">
       <div class="alert-card-title"><i class="ti ti-alarm" style="color:#C0180F"></i> Urgente — Hoje (${hoje.length})</div>
       ${buildItems([...hojeP,...hojeS],'')}
@@ -696,23 +731,24 @@ function renderDashboard(){
       ${buildItems(semana7.filter(x=>x.tipo==='social'),'social')}
     </div>`;
 
+  // AGENDA 15 dias
   const prox=all.filter(x=>x.status==='agendado'&&dU(x.data)>=0&&dU(x.data)<=15).sort((a,b)=>new Date(a.data)-new Date(b.data));
+  const agendaEl=document.getElementById('dashAgenda');
+  if(!agendaEl) return;
   if(!prox.length){
-    document.getElementById('dashAgenda').innerHTML='<div class="empty-state">Nenhum compromisso nos próximos 15 dias</div>';
+    agendaEl.innerHTML='<div class="empty-state">Nenhum compromisso nos próximos 15 dias</div>';
   } else {
-    document.getElementById('dashAgenda').innerHTML=`<table>
+    agendaEl.innerHTML=`<table>
       <thead><tr><th style="width:24%">Cliente</th><th style="width:9%">Tipo</th><th style="width:12%">Benefício</th><th style="width:10%">Data</th><th style="width:7%">Hora</th><th style="width:16%">Local</th><th style="width:9%">Status</th><th style="width:13%">Urgência</th></tr></thead>
       <tbody>${prox.map(x=>{
-        const dd=dU(x.data); const cls=dd===0?'row-today':dd<=3?'row-week':'';
-        const xid=x._id||x.id;
+        const dd=dU(x.data); const cls=dd===0?'row-today':dd<=2?'row-week':''; const xid=x._id||x.id;
         return`<tr class="${cls}">
           <td><span class="td-name" onclick="openDetailById('${xid}','${x.tipo||'pericia'}')">${x.nome||'—'}</span></td>
           <td>${x.tipo==='social'?'<span class="badge badge-gray">Social</span>':'<span class="badge badge-blue">Perícia</span>'}</td>
-          <td>${bBadge(x.beneficio)}</td>
-          <td>${fDate(x.data)}</td><td>${x.hora||'—'}</td>
+          <td>${bBadge(x.beneficio)}</td><td>${fDate(x.data)}</td><td>${x.hora||'—'}</td>
           <td class="td-muted" title="${x.local||''}">${(x.local||'—').substring(0,22)}</td>
           <td>${stBadge(x.status)}</td>
-          <td>${dd===0?'<span class="badge badge-red">Hoje!</span>':dd===1?'<span class="badge badge-amber">Amanhã</span>':dd<=7?`<span class="badge badge-amber">${dd}d</span>`:`<span class="badge badge-gray">${dd}d</span>`}</td>
+          <td>${dd===0?'<span class="badge badge-red">Hoje!</span>':dd===1?'<span class="badge badge-red">Amanhã!</span>':dd===2?'<span class="badge badge-red">2 dias</span>':dd<=7?`<span class="badge badge-amber">${dd}d</span>`:`<span class="badge badge-gray">${dd}d</span>`}</td>
         </tr>`;}).join('')}
       </tbody></table>`;
   }
@@ -730,6 +766,16 @@ function dashFilter(f){
   if(f==='sociais_ag'){  openPopup('Av. Sociais agendadas', D.sociais.filter(x=>x.status==='agendado'), 'social'); return; }
   if(f==='hoje'){
     openPopup('Compromissos de hoje', [...D.pericias,...D.sociais].filter(x=>dU(x.data)===0&&x.status==='agendado'), ''); return;
+  }
+  if(f==='em1dia'){
+    openPopup('⚠️ Amanhã — 1 dia!', [...D.pericias,...D.sociais].filter(x=>dU(x.data)===1&&x.status==='agendado'), ''); return;
+  }
+  if(f==='em2dias'){
+    openPopup('Em 2 dias', [...D.pericias,...D.sociais].filter(x=>dU(x.data)===2&&x.status==='agendado'), ''); return;
+  }
+  if(f==='em15dias'){
+    const p=[...D.pericias,...D.sociais].filter(x=>{const d=dU(x.data);return d>=3&&d<=15&&x.status==='agendado';}).sort((a,b)=>new Date(a.data)-new Date(b.data));
+    openPopup('Próximos 15 dias', p, ''); return;
   }
   if(f==='prox15'){
     const p=[...D.pericias,...D.sociais].filter(x=>{const d=dU(x.data);return d>=0&&d<=15&&x.status==='agendado';}).sort((a,b)=>new Date(a.data)-new Date(b.data));
@@ -1061,7 +1107,7 @@ function openModal(mode, type, id){
         <div class="form-group"><label>Benefício</label><select id="fBenef"><option value="">Selecione...</option>${BOPTS}</select></div>
         <div class="form-group"><label>Nº do processo</label><input id="fProc" value="${item.processo||''}"></div>
       </div>
-      <div class="form-full form-group"><label>Observações</label><textarea id="fObs">${item.obs||''}</textarea></div>`;
+      <div class="form-full form-group"><label>Observações <span style=\"color:var(--wine);font-size:10px\">(obrigatório)</span></label><textarea id="fObs" placeholder="Descreva informações relevantes sobre o caso...">${item.obs||''}</textarea></div>`;
   } else if(type==='usuario'){
     title='Cadastrar novo usuário';
     body=`
@@ -1131,10 +1177,11 @@ window.autoFill=autoFill;
 async function saveModal(){
   const{mode,type,id}=MX;
   if(type==='cliente'){
-    const nome=document.getElementById('fNome').value.trim(); if(!nome){alert('Nome do beneficiário é obrigatório');return;}
+    const nome=document.getElementById('fNome').value.trim(); if(!nome){alert('⚠️ Nome do beneficiário é obrigatório');return;}
     const rep=(document.getElementById('fRep')||{}).value?.trim()||'';
+    const obs=document.getElementById('fObs').value.trim(); if(!obs){alert('⚠️ O campo Observações é obrigatório.\n\nDescreva informações relevantes sobre o caso.');return;}
     const xid=mode==='edit'?id:genId();
-    const obj={_id:xid,id:xid,nome,representante:rep,cpf:document.getElementById('fCpf').value,telefone:document.getElementById('fTel').value,beneficio:document.getElementById('fBenef').value,processo:document.getElementById('fProc').value,obs:document.getElementById('fObs').value};
+    const obj={_id:xid,id:xid,nome,representante:rep,cpf:document.getElementById('fCpf').value,telefone:document.getElementById('fTel').value,beneficio:document.getElementById('fBenef').value,processo:document.getElementById('fProc').value,obs};
     const ok=await fbSet('clientes',xid,obj);
     if(ok){ logH(mode==='edit'?'Editou cliente':'Adicionou cliente', rep?`${nome} — resp. ${rep}`:nome); showToast(mode==='edit'?'Cliente atualizado!':'Cliente cadastrado!'); closeModal(); }
   } else if(type==='usuario'){
@@ -1201,14 +1248,15 @@ window.openWaDirect=openWaDirect;
 
 // ─── INIT ───
 window.addEventListener('load', async ()=>{
-  // Tenta carregar usuários para disponibilizar no login
-  try{
-    const snap=await getDocs(collection(db,'usuarios'));
-    snap.docs.forEach(d=>{ D.usuarios[d.id]=d.data(); });
-  }catch(e){}
+  // Show login immediately — don't wait for Firebase
   document.getElementById('loadingScreen').classList.add('hidden');
   document.getElementById('loginWrap').style.display='flex';
   document.getElementById('lusr').focus();
+  // Load custom users from Firebase in background
+  try{
+    const snap=await getDocs(collection(db,'usuarios'));
+    snap.docs.forEach(d=>{ D.usuarios[d.id]=d.data(); });
+  }catch(e){ console.log('Firebase init:', e.message); }
 });
 </script>
 </body>
