@@ -166,7 +166,7 @@ tbody tr.row-week:hover td{background:#FFF3CC}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(20,10,5,.5);display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;z-index:1000;overflow-y:auto}
 .modal-overlay.hidden{display:none}
-.modal-box{background:var(--white);border-radius:var(--radius-lg);width:640px;max-width:100%;box-shadow:var(--shadow-lg);margin:auto}
+.modal-box{background:var(--white);border-radius:var(--radius-lg);width:700px;max-width:100%;box-shadow:var(--shadow-lg);margin:auto}
 .modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .modal-title{font-size:15px;font-weight:700;color:var(--text)}
 .modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;line-height:1;padding:2px;transition:color .12s}
@@ -1107,7 +1107,35 @@ function openModal(mode, type, id){
         <div class="form-group"><label>Benefício</label><select id="fBenef"><option value="">Selecione...</option>${BOPTS}</select></div>
         <div class="form-group"><label>Nº do processo</label><input id="fProc" value="${item.processo||''}"></div>
       </div>
-      <div class="form-full form-group"><label>Observações <span style=\"color:var(--wine);font-size:10px\">(obrigatório)</span></label><textarea id="fObs" placeholder="Descreva informações relevantes sobre o caso...">${item.obs||''}</textarea></div>`;
+      <div class="form-full form-group"><label>Observações <span style="color:var(--wine);font-size:10px">(obrigatório)</span></label><textarea id="fObs" placeholder="Descreva informações relevantes sobre o caso...">${item.obs||''}</textarea></div>
+
+      <div style="background:var(--blue-bg);border:1px solid #BAD0F5;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-stethoscope"></i> Perícia Médica <span style="font-size:10px;font-weight:400;color:var(--text2)">(opcional — preencha se já houver data marcada)</span></div>
+        <div class="form-row-3">
+          <div class="form-group"><label>Data da perícia</label><input type="date" id="fPData" value=""></div>
+          <div class="form-group"><label>Horário</label><input type="time" id="fPHora" value=""></div>
+          <div class="form-group"><label>Status</label><select id="fPStatus"><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>APS / Local</label><input id="fPLocal" placeholder="Ex: APS Garanhuns"></div>
+          <div class="form-group"><label>Endereço</label><input id="fPEndereco" placeholder="Rua, nº, bairro, cidade/UF"></div>
+        </div>
+        <div class="form-full form-group"><label>Observações da perícia</label><textarea id="fPObs" style="min-height:42px" placeholder="Informações específicas sobre a perícia..."></textarea></div>
+      </div>
+
+      <div style="background:var(--amber-bg);border:1px solid #F0C97A;border-radius:8px;padding:12px 14px;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-users"></i> Avaliação Social <span style="font-size:10px;font-weight:400;color:var(--text2)">(opcional — preencha se já houver data marcada)</span></div>
+        <div class="form-row-3">
+          <div class="form-group"><label>Data da avaliação</label><input type="date" id="fSData" value=""></div>
+          <div class="form-group"><label>Horário</label><input type="time" id="fSHora" value=""></div>
+          <div class="form-group"><label>Status</label><select id="fSStatus"><option value="agendado">Agendado</option><option value="realizado">Realizado</option><option value="concedido">Concedido</option><option value="indeferido">Indeferido</option><option value="cancelado">Cancelado</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>APS / Local</label><input id="fSLocal" placeholder="Ex: APS Garanhuns"></div>
+          <div class="form-group"><label>Endereço</label><input id="fSEndereco" placeholder="Rua, nº, bairro, cidade/UF"></div>
+        </div>
+        <div class="form-full form-group"><label>Observações da avaliação</label><textarea id="fSObs" style="min-height:42px" placeholder="Informações específicas sobre a avaliação social..."></textarea></div>
+      </div>`;
   } else if(type==='usuario'){
     title='Cadastrar novo usuário';
     body=`
@@ -1181,9 +1209,45 @@ async function saveModal(){
     const rep=(document.getElementById('fRep')||{}).value?.trim()||'';
     const obs=document.getElementById('fObs').value.trim(); if(!obs){alert('⚠️ O campo Observações é obrigatório.\n\nDescreva informações relevantes sobre o caso.');return;}
     const xid=mode==='edit'?id:genId();
-    const obj={_id:xid,id:xid,nome,representante:rep,cpf:document.getElementById('fCpf').value,telefone:document.getElementById('fTel').value,beneficio:document.getElementById('fBenef').value,processo:document.getElementById('fProc').value,obs};
+    const benef=document.getElementById('fBenef').value;
+    const proc=document.getElementById('fProc').value;
+    const tel=document.getElementById('fTel').value;
+    const obj={_id:xid,id:xid,nome,representante:rep,cpf:document.getElementById('fCpf').value,telefone:tel,beneficio:benef,processo:proc,obs};
+    const disp=rep?`${nome} — resp. ${rep}`:nome;
     const ok=await fbSet('clientes',xid,obj);
-    if(ok){ logH(mode==='edit'?'Editou cliente':'Adicionou cliente', rep?`${nome} — resp. ${rep}`:nome); showToast(mode==='edit'?'Cliente atualizado!':'Cliente cadastrado!'); closeModal(); }
+    if(!ok) return;
+    logH(mode==='edit'?'Editou cliente':'Adicionou cliente', disp);
+
+    // Salvar perícia se data preenchida
+    const pData=document.getElementById('fPData').value;
+    if(pData){
+      const pid=genId();
+      const pObj={_id:pid,id:pid,clienteId:xid,nome:disp,beneficio:benef,processo:proc,telefone:tel,
+        status:document.getElementById('fPStatus').value||'agendado',
+        data:pData,hora:document.getElementById('fPHora').value,
+        local:document.getElementById('fPLocal').value,
+        endereco:document.getElementById('fPEndereco').value,
+        obs:document.getElementById('fPObs').value,tipo:'pericia'};
+      await fbSet('pericias',pid,pObj);
+      logH('Adicionou perícia',disp);
+    }
+
+    // Salvar avaliação social se data preenchida
+    const sData=document.getElementById('fSData').value;
+    if(sData){
+      const sid=genId();
+      const sObj={_id:sid,id:sid,clienteId:xid,nome:disp,beneficio:benef,processo:proc,telefone:tel,
+        status:document.getElementById('fSStatus').value||'agendado',
+        data:sData,hora:document.getElementById('fSHora').value,
+        local:document.getElementById('fSLocal').value,
+        endereco:document.getElementById('fSEndereco').value,
+        obs:document.getElementById('fSObs').value,tipo:'social'};
+      await fbSet('sociais',sid,sObj);
+      logH('Adicionou avaliação social',disp);
+    }
+
+    const msg=mode==='edit'?'Cliente atualizado!':`Cliente cadastrado!${pData?' · Perícia salva!':''}${sData?' · Av. social salva!':''}`;
+    showToast(msg); closeModal();
   } else if(type==='usuario'){
     const nome=document.getElementById('fNome').value.trim(); if(!nome){alert('Nome é obrigatório');return;}
     const login=document.getElementById('fLogin').value.trim().replace(/\s/g,''); if(!login){alert('Login é obrigatório');return;}
