@@ -178,7 +178,7 @@ tbody tr.row-jud-done:hover td{background:#EAE0F5}
 .modal-title{font-size:15px;font-weight:700;color:var(--text)}
 .modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;line-height:1;padding:2px;transition:color .12s}
 .modal-close:hover{color:var(--text)}
-.modal-body{padding:20px}
+.modal-body{padding:20px;overflow-y:auto;max-height:72vh}
 .modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
@@ -889,6 +889,35 @@ function renderSociais(){
 }
 window.renderSociais=renderSociais;
 
+function getAgendamentosCliente(cid, cnome){
+  const nomeNorm=s=>(s||'').toLowerCase().trim();
+  const match=x=>{
+    if(x.clienteId&&x.clienteId===cid) return true;
+    if(x.nome&&(nomeNorm(x.nome)===nomeNorm(cnome)||nomeNorm(cnome).includes(nomeNorm(x.nome))||nomeNorm(x.nome).includes(nomeNorm(cnome)))) return true;
+    return false;
+  };
+  return{
+    pericias:D.pericias.filter(match).sort((a,b)=>new Date(b.data)-new Date(a.data)),
+    sociais:D.sociais.filter(match).sort((a,b)=>new Date(b.data)-new Date(a.data))
+  };
+}
+window.getAgendamentosCliente=getAgendamentosCliente;
+
+function agBadges(cid, cnome){
+  const{pericias,sociais}=getAgendamentosCliente(cid,cnome);
+  const statusColor={agendado:'#1250A0',realizado:'#1D6B2E',concedido:'#1D6B2E',indeferido:'#C0180F','para judicializar':'#C05000',judicializado:'#6B21A8','concedido judicialmente':'#0F6B4E',cancelado:'#9C9690'};
+  let badges='';
+  if(pericias.length){
+    const p=pericias[0]; const cor=statusColor[p.status]||'#9C9690';
+    badges+=`<span style="display:inline-flex;align-items:center;gap:3px;background:#EAF1FC;color:${cor};border:1px solid ${cor}33;border-radius:10px;padding:2px 7px;font-size:10px;font-weight:600;margin-top:3px;margin-right:3px"><i class="ti ti-stethoscope" style="font-size:11px"></i> Perícia ${p.data?fDate(p.data):''} <span style="font-size:9px;opacity:.8">(${p.status||''})</span></span>`;
+  }
+  if(sociais.length){
+    const s=sociais[0]; const cor=statusColor[s.status]||'#9C9690';
+    badges+=`<span style="display:inline-flex;align-items:center;gap:3px;background:#FEF6E4;color:${cor};border:1px solid ${cor}33;border-radius:10px;padding:2px 7px;font-size:10px;font-weight:600;margin-top:3px"><i class="ti ti-users" style="font-size:11px"></i> Social ${s.data?fDate(s.data):''} <span style="font-size:9px;opacity:.8">(${s.status||''})</span></span>`;
+  }
+  return badges?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">${badges}</div>`:'';
+}
+
 function renderClientes(){
   const q=(document.getElementById('sCli')||{}).value||'';
   let rows=D.clientes.filter(x=>!q||dispName(x).toLowerCase().includes(q.toLowerCase()));
@@ -897,7 +926,10 @@ function renderClientes(){
   tb.innerHTML=rows.map(x=>{
     const nd=dispName(x); const xid=x._id||x.id;
     return`<tr>
-      <td><span class="td-name" onclick="openClientDetail('${xid}')">${x.nome||'—'}</span>${x.representante?`<span class="td-minor">resp. ${x.representante}</span>`:''}
+      <td>
+        <span class="td-name" onclick="openClientDetail('${xid}')">${x.nome||'—'}</span>
+        ${x.representante?`<span class="td-minor">resp. ${x.representante}</span>`:''}
+        ${agBadges(xid,nd)}
       </td>
       <td class="td-muted">${x.cpf||'—'}</td>
       <td>${x.telefone?`<div style="display:flex;align-items:center;gap:5px"><span class="td-muted">${x.telefone}</span><button class="btn-wa" onclick="openWaDirect('${x.telefone}','${encodeURIComponent(nd)}')"><i class="ti ti-brand-whatsapp"></i></button></div>`:'—'}</td>
@@ -1141,6 +1173,27 @@ function openModal(mode, type, id){
   let body='', title='';
   if(type==='cliente'){
     title=mode==='edit'?'Editar cliente':'Novo cliente';
+    // Para edição: busca perícias e sociais já cadastradas
+    const existentes = mode==='edit' ? getAgendamentosCliente(id, dispName(item)) : {pericias:[],sociais:[]};
+    const existPeri = existentes.pericias;
+    const existSoc  = existentes.sociais;
+    const listaExistentes = (itens, tipoStr, cor, icone) => itens.length ? `
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:${cor};margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ${icone}"></i> ${tipoStr} já cadastrada${itens.length>1?'s':''}</div>
+        ${itens.map(p=>`
+          <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:8px 10px;margin-bottom:5px">
+            <div style="flex:1;font-size:12px">
+              <strong>${fDate(p.data)}</strong> ${p.hora?'· '+p.hora:''} 
+              · ${p.local||'sem local'} 
+              · ${stBadge(p.status)}
+            </div>
+            <button class="btn-icon" style="flex-shrink:0" onclick="closeModal();openModal('edit','${tipoStr==='Perícia Médica'?'pericia':'social'}','${p._id||p.id}')">
+              <i class="ti ti-edit"></i> Editar
+            </button>
+          </div>`).join('')}
+      </div>` : '';
+    const novaPeriLabel = existPeri.length ? '+ Adicionar nova perícia' : 'Perícia Médica';
+    const novaSocLabel  = existSoc.length  ? '+ Adicionar nova avaliação social' : 'Avaliação Social';
     body=`
       <div class="form-hint"><i class="ti ti-info-circle"></i> Para menores: preencha "Responsável legal". Será exibido como <strong>Nome — resp. Responsável</strong>.</div>
       <div class="form-row">
@@ -1159,7 +1212,8 @@ function openModal(mode, type, id){
       <div class="form-full form-group"><label>Observações <span style="color:var(--wine);font-size:10px">(obrigatório)</span></label><textarea id="fObs" placeholder="Descreva informações relevantes sobre o caso...">${item.obs||''}</textarea></div>
 
       <div style="background:var(--blue-bg);border:1px solid #BAD0F5;border-radius:8px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-stethoscope"></i> Perícia Médica <span style="font-size:10px;font-weight:400;color:var(--text2)">(opcional — preencha se já houver data marcada)</span></div>
+        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-stethoscope"></i> ${novaPeriLabel} <span style="font-size:10px;font-weight:400;color:var(--text2)">(opcional — deixe em branco se não quiser cadastrar agora)</span></div>
+        ${listaExistentes(existPeri,'Perícia Médica','var(--blue)','ti-stethoscope')}
         <div class="form-row-3">
           <div class="form-group"><label>Data da perícia</label><input type="date" id="fPData" value=""></div>
           <div class="form-group"><label>Horário</label><input type="time" id="fPHora" value=""></div>
@@ -1173,7 +1227,8 @@ function openModal(mode, type, id){
       </div>
 
       <div style="background:var(--amber-bg);border:1px solid #F0C97A;border-radius:8px;padding:12px 14px;margin-bottom:4px">
-        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-users"></i> Avaliação Social <span style="font-size:10px;font-weight:400;color:var(--text2)">(opcional — preencha se já houver data marcada)</span></div>
+        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-users"></i> ${novaSocLabel} <span style="font-size:10px;font-weight:400;color:var(--text2)">(opcional — deixe em branco se não quiser cadastrar agora)</span></div>
+        ${listaExistentes(existSoc,'Avaliação Social','var(--amber)','ti-users')}
         <div class="form-row-3">
           <div class="form-group"><label>Data da avaliação</label><input type="date" id="fSData" value=""></div>
           <div class="form-group"><label>Horário</label><input type="time" id="fSHora" value=""></div>
